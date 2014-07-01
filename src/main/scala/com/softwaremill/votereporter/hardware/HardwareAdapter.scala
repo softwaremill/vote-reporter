@@ -3,7 +3,7 @@ package com.softwaremill.votereporter.hardware
 import akka.actor.ActorRef
 import com.pi4j.io.gpio._
 import com.pi4j.io.gpio.event.{GpioPinDigitalStateChangeEvent, GpioPinListenerDigital}
-import com.softwaremill.votereporter.PartialVoteRequest
+import com.softwaremill.votereporter.votes.PartialVoteRequest
 import org.joda.time.DateTime
 
 

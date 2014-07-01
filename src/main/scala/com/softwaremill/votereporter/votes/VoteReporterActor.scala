@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 import akka.actor.Actor
-import com.softwaremill.votereporter.VoteRequest
+import com.softwaremill.votereporter.common.LogStart
 import com.softwaremill.votereporter.config.VoteReporterConfig
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.json4s.DefaultFormats

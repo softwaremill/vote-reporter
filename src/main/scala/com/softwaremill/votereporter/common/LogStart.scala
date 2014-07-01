@@ -1,4 +1,4 @@
-package com.softwaremill.votereporter.votes
+package com.softwaremill.votereporter.common
 
 import akka.actor.Actor
 import com.typesafe.scalalogging.slf4j.LazyLogging

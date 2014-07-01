@@ -1,4 +1,4 @@
-package com.softwaremill.votereporter
+package com.softwaremill.votereporter.votes
 
 import org.joda.time.DateTime
 
