@@ -3,7 +3,7 @@ package com.softwaremill.votereporter.votes
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorSystem}
 import com.softwaremill.votereporter.common.LogStart
 import com.softwaremill.votereporter.config.VoteReporterConfig
 import com.typesafe.scalalogging.slf4j.LazyLogging
@@ -29,9 +29,9 @@ object Retry {
   val InitialScheduleDelay = 20.seconds
 }
 
-class VoteReporterActor(config: VoteReporterConfig) extends Actor with LazyLogging with LogStart with Json4sJacksonSupport {
+class VoteReporterActor(client: VoteReporterClient) extends Actor with LazyLogging with LogStart with Json4sJacksonSupport {
 
-  import Retry.{InitialScheduleDelay, Retries}
+  import com.softwaremill.votereporter.votes.Retry.{InitialScheduleDelay, Retries}
 
   override implicit def json4sJacksonFormats = new DefaultFormats {
     override protected def dateFormatter =
@@ -44,9 +44,7 @@ class VoteReporterActor(config: VoteReporterConfig) extends Actor with LazyLoggi
     case voteRequest: VoteRequest =>
       self ! Retry(voteRequest, Retries, InitialScheduleDelay)
     case Retry(voteRequest, retriesLeft, delay) =>
-      val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
-
-      val responseFuture: Future[HttpResponse] = pipeline(Post(config.voteCounterEndpoint, voteRequest))
+      val responseFuture = client.report(voteRequest)
 
       responseFuture.andThen {
         case Failure(e) =>
@@ -63,6 +61,28 @@ class VoteReporterActor(config: VoteReporterConfig) extends Actor with LazyLoggi
     } else {
       logger.warn(s"Could not post $voteRequest. Retries limit exhausted.")
     }
+  }
+
+}
+
+trait VoteReporterClient {
+  def report(voteRequest: VoteRequest): Future[HttpResponse]
+}
+
+class DefaultVoteReporterClient(config: VoteReporterConfig, implicit protected val system: ActorSystem)
+  extends VoteReporterClient with Json4sJacksonSupport {
+
+  import system.dispatcher
+
+  override implicit def json4sJacksonFormats = new DefaultFormats {
+    override protected def dateFormatter =
+      new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+  } ++ JodaTimeSerializers.all
+
+  def report(voteRequest: VoteRequest): Future[HttpResponse] = {
+    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+
+    pipeline(Post(config.voteCounterEndpoint, voteRequest))
   }
 
 }

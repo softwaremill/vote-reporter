@@ -1,12 +1,12 @@
 package com.softwaremill.votereporter.infrastructure
 
-import akka.actor.{Props, ActorSystem}
+import akka.actor.{ActorSystem, Props}
 import com.pi4j.io.gpio.GpioFactory
 import com.softwaremill.macwire.Macwire
 import com.softwaremill.thegarden.lawn.shutdownables._
 import com.softwaremill.votereporter.config.VoteReporterConfig
 import com.softwaremill.votereporter.hardware.HardwareAdapter
-import com.softwaremill.votereporter.votes.{VoteAcceptor, VoteRequestRouter, VoteReporterActor, VoteLoggerActor}
+import com.softwaremill.votereporter.votes._
 
 trait HardwareModule extends Macwire {
 
@@ -19,12 +19,14 @@ with DefaultShutdownHandlerModule with ShutdownOnJVMTermination {
 
   lazy val config = new VoteReporterConfig
 
-  lazy val actorSystem = ActorSystem("vr-main") onShutdown { actorSystem =>
+  lazy val actorSystem : ActorSystem = ActorSystem("vr-main") onShutdown { actorSystem =>
     actorSystem.shutdown()
     actorSystem.awaitTermination()
   }
 
-  lazy val voteReporterActor = actorSystem.actorOf(Props(classOf[VoteReporterActor], config))
+  lazy val voteReporterClient : VoteReporterClient = new DefaultVoteReporterClient(config, actorSystem)
+
+  lazy val voteReporterActor = actorSystem.actorOf(Props(classOf[VoteReporterActor], voteReporterClient))
   lazy val voteLoggerActor = actorSystem.actorOf(Props(classOf[VoteLoggerActor]))
   lazy val voteRequestRouter = actorSystem.actorOf(Props(classOf[VoteRequestRouter],
     voteLoggerActor, voteReporterActor))
