@@ -22,7 +22,7 @@ class HardwareAdapter(gpioController: GpioController, voteRequestRouter: ActorRe
   }
 
   private def registerDislikeButton() = {
-    val dislikeButton = gpioController.provisionDigitalInputPin(DislikeButtonPin, PinPullResistance.PULL_DOWN)
+    val dislikeButton = gpioController.provisionDigitalInputPin(DislikeButtonPin, PinPullResistance.PULL_UP)
     val dislikeButtonLight = gpioController.provisionDigitalOutputPin(DislikeButtonLightPin, "dislikeButtonLight", PinState.LOW)
     dislikeButton.addListener(new ButtonListener(dislikeButtonLight, positive = false))
   }
@@ -35,11 +35,18 @@ class HardwareAdapter(gpioController: GpioController, voteRequestRouter: ActorRe
 
   class ButtonListener(val light: GpioPinDigitalOutput, positive: Boolean) extends GpioPinListenerDigital {
 
+    var previousState = PinState.LOW
+    var timeSinceLow = System.currentTimeMillis()
+
     override def handleGpioPinDigitalStateChangeEvent(event: GpioPinDigitalStateChangeEvent) {
-      if (event.getState == PinState.HIGH) {
-        sendVoteRequest()
-        Thread.sleep(1000)
+      if (previousState == PinState.HIGH && event.getState == PinState.LOW) {
+        timeSinceLow = System.currentTimeMillis()
       }
+      else if (event.getState == PinState.HIGH && previousState == PinState.LOW && System.currentTimeMillis() - timeSinceLow > 200) {
+        sendVoteRequest()
+      }
+
+      previousState = event.getState
     }
 
     private def sendVoteRequest() {
