@@ -38,16 +38,12 @@ class HardwareAdapter(gpioController: GpioController, voteRequestRouter: ActorRe
     override def handleGpioPinDigitalStateChangeEvent(event: GpioPinDigitalStateChangeEvent) {
       if (event.getState == PinState.HIGH) {
         sendVoteRequest()
-        blinkLight()
+        Thread.sleep(1000)
       }
     }
 
     private def sendVoteRequest() {
       voteRequestRouter ! PartialVoteRequest(positive, new DateTime())
-    }
-
-    private def blinkLight() {
-      light.blink(BlinkDelay, BlinkDuration)
     }
 
   }
