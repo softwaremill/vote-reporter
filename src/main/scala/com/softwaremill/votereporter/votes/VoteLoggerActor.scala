@@ -1,7 +1,6 @@
 package com.softwaremill.votereporter.votes
 
 import akka.actor.Actor
-import VoteRequest
 import com.softwaremill.votereporter.common.LogStart
 import com.typesafe.scalalogging.slf4j.LazyLogging
 
