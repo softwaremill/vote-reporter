@@ -62,7 +62,7 @@ object VoteReporterBuild extends Build {
 
   override val settings = super.settings ++ Seq(
     name := "vote-reporter",
-    version := "1.4",
+    version := "1.5",
     scalaVersion := "2.11.1",
     scalacOptions in GlobalScope in Compile := Seq("-unchecked", "-deprecation", "-feature"),
     scalacOptions in GlobalScope in Test := Seq("-unchecked", "-deprecation", "-feature"),
