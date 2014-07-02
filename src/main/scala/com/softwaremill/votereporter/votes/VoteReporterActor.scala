@@ -1,22 +1,28 @@
 package com.softwaremill.votereporter.votes
 
+import java.security.cert.X509Certificate
 import java.text.SimpleDateFormat
 import java.util.Locale
+import javax.net.ssl.{KeyManager, SSLContext, X509TrustManager}
 
 import akka.actor.{Actor, ActorSystem}
+import akka.io.IO
+import akka.pattern.ask
+import akka.util.Timeout
 import com.softwaremill.votereporter.common.LogStart
 import com.softwaremill.votereporter.config.VoteReporterConfig
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import org.json4s.DefaultFormats
 import org.json4s.ext.JodaTimeSerializers
+import spray.can.Http
 import spray.client.pipelining._
 import spray.http._
 import spray.httpx.Json4sJacksonSupport
+import spray.io.ClientSSLEngineProvider
 
 import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
-
 
 case class Retry(voteRequest: VoteRequest, retriesLeft: Int, scheduleDelay: FiniteDuration)
 
@@ -70,7 +76,7 @@ trait VoteReporterClient {
 }
 
 class DefaultVoteReporterClient(config: VoteReporterConfig, implicit protected val system: ActorSystem)
-  extends VoteReporterClient with Json4sJacksonSupport {
+  extends VoteReporterClient with Json4sJacksonSupport with SslConfiguration {
 
   import system.dispatcher
 
@@ -80,9 +86,59 @@ class DefaultVoteReporterClient(config: VoteReporterConfig, implicit protected v
   } ++ JodaTimeSerializers.all
 
   def report(voteRequest: VoteRequest): Future[HttpResponse] = {
-    val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
+    implicit val timeout: Timeout = 60.seconds
 
-    pipeline(Post(config.voteCounterEndpoint, voteRequest))
+    val votesEndpoint = new VotesEndpoint(config.voteCounterEndpoint)
+
+    val pipeline: Future[SendReceive] =
+      for (
+        Http.HostConnectorInfo(connector, _) <-
+        IO(Http) ? Http.HostConnectorSetup(votesEndpoint.host,
+          port = votesEndpoint.port,
+          sslEncryption = votesEndpoint.sslEncryption)
+      ) yield sendReceive(connector)
+
+    val request = Post(votesEndpoint.path, voteRequest)
+    pipeline.flatMap(_.apply(request))
+  }
+}
+
+class VotesEndpoint(uriString : String) {
+
+  private val uri = Uri(uriString)
+
+  def sslEncryption : Boolean = uri.scheme == "https"
+
+  def host : String = uri.authority.host.address
+
+  def port : Int = uri.authority.port
+
+  def path : String = uri.path.toString()
+}
+
+trait SslConfiguration {
+  implicit lazy val trustfulSslContext: SSLContext = {
+
+    object BlindFaithX509TrustManager extends X509TrustManager {
+      def checkClientTrusted(chain: Array[X509Certificate], authType: String) = ()
+
+      def checkServerTrusted(chain: Array[X509Certificate], authType: String) = ()
+
+      def getAcceptedIssuers = Array[X509Certificate]()
+    }
+
+    val context = SSLContext.getInstance("TLS")
+
+    context.init(Array[KeyManager](), Array(BlindFaithX509TrustManager), null)
+    context
+  }
+
+  implicit lazy val sslEngineProvider: ClientSSLEngineProvider = ClientSSLEngineProvider { engine =>
+    engine.setEnabledCipherSuites(Array("TLS_RSA_WITH_AES_256_CBC_SHA"))
+    engine.setEnabledProtocols(Array("SSLv3", "TLSv1"))
+    engine.setUseClientMode(true)
+    engine
   }
 
 }
+

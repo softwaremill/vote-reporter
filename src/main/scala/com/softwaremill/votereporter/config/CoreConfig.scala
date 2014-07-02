@@ -16,6 +16,6 @@ class VoteReporterConfig extends BaseConfig {
 
   lazy val deviceKey = getString("vote-reporter.device-key", "DEFAULT")
 
-  lazy val voteCounterEndpoint = getString("vote-counter-endpoint", "http://quoll.local:8080/votes")
+  lazy val voteCounterEndpoint = getString("vote-reporter.vote-counter-endpoint", "http://quoll.local:8080/votes")
 
 }
