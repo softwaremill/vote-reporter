@@ -16,6 +16,8 @@ class HardwareAdapter(gpioController: GpioController, voteRequestRouter: ActorRe
 
   import HardwareAdapter._
 
+  private val confirmationLed = gpioController.provisionDigitalOutputPin(ConfirmationLedPin, PinState.LOW)
+
   def run() = {
     Future {
       registerLikeButton()
@@ -34,6 +36,10 @@ class HardwareAdapter(gpioController: GpioController, voteRequestRouter: ActorRe
     likeButton.addListener(new ButtonListener(positive = true))
   }
 
+  private def blinkConfirmationLed(duration: Long) = {
+    confirmationLed.blink(ConfirmationBlinkDelay, duration)
+  }
+
   class ButtonListener(positive: Boolean) extends GpioPinListenerDigital {
 
     var previousState = PinState.LOW
@@ -45,6 +51,7 @@ class HardwareAdapter(gpioController: GpioController, voteRequestRouter: ActorRe
       }
       else if (event.getState == PinState.HIGH && previousState == PinState.LOW && System.currentTimeMillis() - timeSinceLow > 200) {
         sendVoteRequest()
+        confirm()
       }
 
       previousState = event.getState
@@ -52,6 +59,11 @@ class HardwareAdapter(gpioController: GpioController, voteRequestRouter: ActorRe
 
     private def sendVoteRequest() {
       voteRequestRouter ! PartialVoteRequest(positive, new DateTime())
+    }
+
+    private def confirm() {
+      def duration = if (positive) LikeConfirmationBlinkDuration else DislikeConfirmationBlinkDuration
+      blinkConfirmationLed(duration)
     }
 
   }
@@ -76,8 +88,12 @@ object HardwareAdapter {
   val DislikeButtonPin = RaspiPin.GPIO_13
 
   val HeartbeatLedPin = RaspiPin.GPIO_11
+  val ConfirmationLedPin = RaspiPin.GPIO_14
 
   /* in milliseconds */
   val HeartbeatDuration = 1000L
+  val ConfirmationBlinkDelay = 100L
+  val LikeConfirmationBlinkDuration = 300L
+  val DislikeConfirmationBlinkDuration = 500L
 
 }
