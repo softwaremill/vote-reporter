@@ -1,5 +1,7 @@
 package com.softwaremill.votereporter.hardware
 
+import java.util.concurrent.Executors
+
 import akka.actor.ActorRef
 import com.pi4j.io.gpio._
 import com.pi4j.io.gpio.event.{GpioPinDigitalStateChangeEvent, GpioPinListenerDigital}
@@ -18,22 +20,21 @@ class HardwareAdapter(gpioController: GpioController, voteRequestRouter: ActorRe
     Future {
       registerLikeButton()
       registerDislikeButton()
+      Executors.newSingleThreadExecutor().submit(new HeartbeatThread)
     }
   }
 
   private def registerDislikeButton() = {
     val dislikeButton = gpioController.provisionDigitalInputPin(DislikeButtonPin, PinPullResistance.PULL_UP)
-    val dislikeButtonLight = gpioController.provisionDigitalOutputPin(DislikeButtonLightPin, "dislikeButtonLight", PinState.LOW)
-    dislikeButton.addListener(new ButtonListener(dislikeButtonLight, positive = false))
+    dislikeButton.addListener(new ButtonListener(positive = false))
   }
 
   private def registerLikeButton() = {
     val likeButton = gpioController.provisionDigitalInputPin(LikeButtonPin, PinPullResistance.PULL_DOWN)
-    val likeButtonLight = gpioController.provisionDigitalOutputPin(LikeButtonLightPin, "likeButtonLight", PinState.LOW)
-    likeButton.addListener(new ButtonListener(likeButtonLight, positive = true))
+    likeButton.addListener(new ButtonListener(positive = true))
   }
 
-  class ButtonListener(val light: GpioPinDigitalOutput, positive: Boolean) extends GpioPinListenerDigital {
+  class ButtonListener(positive: Boolean) extends GpioPinListenerDigital {
 
     var previousState = PinState.LOW
     var timeSinceLow = System.currentTimeMillis()
@@ -55,19 +56,28 @@ class HardwareAdapter(gpioController: GpioController, voteRequestRouter: ActorRe
 
   }
 
+  class HeartbeatThread extends Runnable {
+
+    private val heartbeatLed = gpioController.provisionDigitalOutputPin(HeartbeatLedPin, PinState.LOW)
+
+    override def run() = {
+      while (true) {
+        // pulse() is non-blocking by default - the second param makes the call blocking
+        heartbeatLed.pulse(HeartbeatDuration, true)
+      }
+    }
+  }
 
 }
 
 object HardwareAdapter {
 
   val LikeButtonPin = RaspiPin.GPIO_10
-  val LikeButtonLightPin = RaspiPin.GPIO_11
-
   val DislikeButtonPin = RaspiPin.GPIO_13
-  val DislikeButtonLightPin = RaspiPin.GPIO_14
+
+  val HeartbeatLedPin = RaspiPin.GPIO_11
 
   /* in milliseconds */
-  val BlinkDelay = 100L
-  val BlinkDuration = 500L
+  val HeartbeatDuration = 1000L
 
 }
