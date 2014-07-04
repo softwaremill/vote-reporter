@@ -70,12 +70,13 @@ class HardwareAdapter(gpioController: GpioController, voteRequestRouter: ActorRe
 
   class HeartbeatThread extends Runnable {
 
-    private val heartbeatLed = gpioController.provisionDigitalOutputPin(HeartbeatLedPin, PinState.LOW)
+    private val heartbeatLed = confirmationLed
 
     override def run() = {
       while (true) {
         // pulse() is non-blocking by default - the second param makes the call blocking
         heartbeatLed.pulse(HeartbeatDuration, true)
+        Thread.sleep(1000)
       }
     }
   }
@@ -91,7 +92,7 @@ object HardwareAdapter {
   val ConfirmationLedPin = RaspiPin.GPIO_11
 
   /* in milliseconds */
-  val HeartbeatDuration = 1000L
+  val HeartbeatDuration = 100L
   val ConfirmationBlinkDelay = 100L
   val LikeConfirmationBlinkDuration = 300L
   val DislikeConfirmationBlinkDuration = 500L
