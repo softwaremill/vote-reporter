@@ -88,7 +88,7 @@ object HardwareAdapter {
   val DislikeButtonPin = RaspiPin.GPIO_13
 
   val HeartbeatLedPin = RaspiPin.GPIO_11
-  val ConfirmationLedPin = RaspiPin.GPIO_14
+  val ConfirmationLedPin = RaspiPin.GPIO_11
 
   /* in milliseconds */
   val HeartbeatDuration = 1000L
