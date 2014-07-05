@@ -30,7 +30,7 @@ object Retry {
 
   import scala.concurrent.duration._
 
-  val Retries = 10
+  val Retries = 2000
 
   val InitialScheduleDelay = 20.seconds
 }
@@ -63,7 +63,7 @@ class VoteReporterActor(client: VoteReporterClient) extends Actor with LazyLoggi
 
   private def scheduleDelayed(voteRequest: VoteRequest, retriesLeft: Int, scheduleDelay: FiniteDuration) = {
     if (retriesLeft > 0) {
-      context.system.scheduler.scheduleOnce(scheduleDelay, self, Retry(voteRequest, retriesLeft - 1, scheduleDelay * 2))
+      context.system.scheduler.scheduleOnce(scheduleDelay, self, Retry(voteRequest, retriesLeft - 1, scheduleDelay))
     } else {
       logger.warn(s"Could not post $voteRequest. Retries limit exhausted.")
     }
