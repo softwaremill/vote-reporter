@@ -1,19 +1,22 @@
 Vote reporter
 =============
 
-Preparing the Raspberry Pi
------------------------------------
+## Development
+If you want to report issues please do so at vote-counter's [issue tracker](https://github.com/softwaremill/vote-counter/issues).
 
-### Required software
+## Deployment
+
+### Preparing the Raspberry Pi
+
+#### Required software
 - avahi-daemon
 - ntpdate
 - oracle-java8-jdk
 
-### Configuration
+#### Configuration
 Set the device-id and vote-counter-endpoint in application.conf
 
-### Running
-
+#### Running
 ```
 sudo java -jar vote-reporter-assembly-1.0.jar -Dconfig.file=application.conf
 ```
