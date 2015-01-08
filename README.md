@@ -52,21 +52,26 @@ ssh-copy-id vote_reporter
 ##### Utility scripts
 
 - [wifi.sh](scripts/wifi.sh) - configures the SSID and password used by WPA Supplicant. It looks for the given `SSID` in `/etc/wpa_supplicant/wpa_supplicant.conf` and iff it's not there, adds a new entry with the given `SSID` and `password`, then runs `wpa_cli reconfigure` to apply the changes. Usage:
-```bash
-wifi.sh SSID password
-```
+
+	```bash
+	wifi.sh SSID password
+	```
 
 - [set-device-key.sh](scripts/set-device-key.sh) - updates the `device-key` in `/opt/voter/application.conf` to `new_key`. Usage:
-```bash
-set-device-key.sh new_key
-```
-**NOTE**: you need to restart the voter service for the change to take effect.
+
+	```
+	set-device-key.sh new_key
+	```
+
+	**NOTE**: you need to restart the voter service for the change to take effect.
 
 - [set-vote-counter-endpoint.sh](scripts/set-vote-counter-endpoint) - updates the `vote-counter-endpoint` in `/opt/voter/application.conf` to `new_endpoint`. Usage:
-```bash
-set-vote-counter-endpoint new_endpoint
-```
-**NOTE**: you need to restart the voter service for the change to take effect.
+
+	```
+	set-vote-counter-endpoint new_endpoint
+	```
+
+	**NOTE**: you need to restart the voter service for the change to take effect.
 
 - [restart-voter-service.sh](scripts/restart-voter-service.sh), [reboot.sh](scripts/reboot.sh) - self-explanatory
 
