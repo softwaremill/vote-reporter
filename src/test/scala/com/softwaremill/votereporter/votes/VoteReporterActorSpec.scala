@@ -8,7 +8,7 @@ import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, ShouldMatchers}
 import spray.http.HttpResponse
 
-import scala.concurrent.Promise
+import scala.concurrent.{Future, Promise}
 
 class VoteReporterActorSpec(_system: ActorSystem) extends TestKit(_system) with ImplicitSender
 with FlatSpecLike with BeforeAndAfterAll with ShouldMatchers {
@@ -63,6 +63,8 @@ private[votes] class ClientWithSuccessfulResponse extends VoteReporterClient {
       response
     }.future
   }
+
+  override def sendHeartbeat(): Future[HttpResponse] = ???
 }
 
 private[votes] class ClientWithFailureResponse extends VoteReporterClient {
@@ -74,4 +76,6 @@ private[votes] class ClientWithFailureResponse extends VoteReporterClient {
       new RuntimeException("an error")
     }.future
   }
+
+  override def sendHeartbeat(): Future[HttpResponse] = ???
 }

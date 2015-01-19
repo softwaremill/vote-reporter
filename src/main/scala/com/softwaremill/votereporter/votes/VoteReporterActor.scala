@@ -73,10 +73,12 @@ class VoteReporterActor(client: VoteReporterClient) extends Actor with LazyLoggi
 
 trait VoteReporterClient {
   def report(voteRequest: VoteRequest): Future[HttpResponse]
+
+  def sendHeartbeat(): Future[HttpResponse]
 }
 
 class DefaultVoteReporterClient(config: VoteReporterConfig, implicit protected val system: ActorSystem)
-  extends VoteReporterClient with Json4sJacksonSupport with SslConfiguration {
+  extends VoteReporterClient with Json4sJacksonSupport with SslConfiguration with LazyLogging {
 
   import system.dispatcher
 
@@ -86,24 +88,35 @@ class DefaultVoteReporterClient(config: VoteReporterConfig, implicit protected v
   } ++ JodaTimeSerializers.all
 
   def report(voteRequest: VoteRequest): Future[HttpResponse] = {
+    post(config.voteCounterEndpoint, voteRequest)
+  }
+
+  def sendHeartbeat(): Future[HttpResponse] = {
+    post(config.heartbeatsEndpoint, Map("deviceKey" -> config.deviceKey)).andThen {
+      case Success(response) => logger.debug("Heartbeat sent")
+      case Failure(e) => logger.error("Failed to send heartbeat", e)
+    }
+  }
+
+  private def post(url: String, data: AnyRef): Future[HttpResponse] = {
     implicit val timeout: Timeout = 60.seconds
 
-    val votesEndpoint = new VotesEndpoint(config.voteCounterEndpoint)
+    val endpoint = new Endpoint(url)
 
     val pipeline: Future[SendReceive] =
       for (
         Http.HostConnectorInfo(connector, _) <-
-        IO(Http) ? Http.HostConnectorSetup(votesEndpoint.host,
-          port = votesEndpoint.port,
-          sslEncryption = votesEndpoint.sslEncryption)
+        IO(Http) ? Http.HostConnectorSetup(endpoint.host,
+          port = endpoint.port,
+          sslEncryption = endpoint.sslEncryption)
       ) yield sendReceive(connector)
 
-    val request = Post(votesEndpoint.path, voteRequest)
+    val request = Post(endpoint.path, data)
     pipeline.flatMap(_.apply(request))
   }
 }
 
-class VotesEndpoint(uriString : String) {
+class Endpoint(uriString: String) {
 
   private val uri = Uri(uriString)
 
