@@ -77,6 +77,14 @@ ssh-copy-id vote_reporter
 
 	**NOTE**: you need to restart the voter service for the change to take effect.
 
+- [configure-heartbeats.sh](scripts/configure-heartbeats.sh) - updates the `heartbeats.endpoint` and `heartbeats.interval` in `/opt/voter/application.conf` to `new_endpoint`, `interval_in_seconds`. Usage:
+
+	```
+	configure_heartbeats.sh new_endpoint interval_in_seconds
+	```
+
+	**NOTE**: you need to restart the voter service for the change to take effect.
+
 - [restart-voter-service.sh](scripts/restart-voter-service.sh), [reboot.sh](scripts/reboot.sh) - self-explanatory
 
 
