@@ -69,10 +69,10 @@ ssh-copy-id vote_reporter
 
 	**NOTE**: you need to restart the voter service for the change to take effect.
 
-- [set-vote-counter-endpoint.sh](scripts/set-vote-counter-endpoint) - updates the `vote-counter-endpoint` in `/opt/voter/application.conf` to `new_endpoint`. Usage:
+- [set-vote-counter-endpoint.sh](scripts/set-vote-counter-endpoint.sh) - updates the `vote-counter-endpoint` in `/opt/voter/application.conf` to `new_endpoint`. Usage:
 
 	```
-	set-vote-counter-endpoint new_endpoint
+	set-vote-counter-endpoint.sh new_endpoint
 	```
 
 	**NOTE**: you need to restart the voter service for the change to take effect.
